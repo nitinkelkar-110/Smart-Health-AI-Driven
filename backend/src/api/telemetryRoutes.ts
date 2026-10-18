@@ -168,6 +168,132 @@ telemetryRouter.get('/doctors', (_req: Request, res: Response): void => {
   });
 });
 
+// POST /api/doctors/attendance — Log doctor attendance for a facility
+telemetryRouter.post('/doctors/attendance', (req: Request, res: Response): void => {
+  const { facilityId, presentDoctors, absentDoctors, onLeaveDoctors, alertNote } = req.body;
+  if (!facilityId) {
+    res.status(400).json({ success: false, error: 'facilityId is required' });
+    return;
+  }
+  const updated = db.updateDoctorAttendance(
+    facilityId,
+    Number(presentDoctors) || 0,
+    Number(absentDoctors) || 0,
+    Number(onLeaveDoctors) || 0,
+    alertNote
+  );
+  if (!updated) {
+    res.status(404).json({ success: false, error: 'Facility doctor record not found' });
+    return;
+  }
+  res.json({
+    success: true,
+    message: 'Doctor attendance updated successfully',
+    doctorRecord: updated,
+  });
+});
+
+// GET /api/patients — Live district patient triage and OPD queue
+telemetryRouter.get('/patients', (req: Request, res: Response): void => {
+  const facilityId = req.query.facilityId as string;
+  const status = req.query.status as string;
+  const priority = req.query.priority as string;
+  const search = (req.query.search as string || '').toLowerCase().trim();
+
+  let patients = db.patients;
+
+  if (facilityId && facilityId !== 'ALL') {
+    patients = patients.filter((p) => p.facilityId === facilityId);
+  }
+  if (status && status !== 'ALL') {
+    patients = patients.filter((p) => p.status === status);
+  }
+  if (priority && priority !== 'ALL') {
+    patients = patients.filter((p) => p.triagePriority === priority);
+  }
+  if (search) {
+    patients = patients.filter(
+      (p) =>
+        p.name.toLowerCase().includes(search) ||
+        p.uhid.toLowerCase().includes(search) ||
+        p.chiefComplaint.toLowerCase().includes(search) ||
+        p.attendingDoctor.toLowerCase().includes(search) ||
+        p.department.toLowerCase().includes(search)
+    );
+  }
+
+  res.json({
+    success: true,
+    count: patients.length,
+    totalRegistered: db.patients.length,
+    patients,
+  });
+});
+
+// POST /api/patients — Register new incoming patient
+telemetryRouter.post('/patients', (req: Request, res: Response): void => {
+  const {
+    uhid,
+    name,
+    age,
+    gender,
+    facilityId,
+    facilityName,
+    department,
+    chiefComplaint,
+    triagePriority,
+    vitals,
+    attendingDoctor,
+    status,
+    bedNumber,
+  } = req.body;
+
+  if (!name || !facilityId || !chiefComplaint) {
+    res.status(400).json({
+      success: false,
+      error: 'Missing required patient fields: name, facilityId, and chiefComplaint are mandatory',
+    });
+    return;
+  }
+
+  const newPatient = db.addPatient({
+    uhid: uhid || `ABHA-MH-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    name,
+    age: Number(age) || 30,
+    gender: gender || 'Other',
+    facilityId,
+    facilityName: facilityName || 'District Health Facility',
+    department: department || 'General OPD',
+    chiefComplaint,
+    triagePriority: triagePriority || 'P3 - Urgent',
+    vitals: vitals || { bp: '120/80', pulse: 80, spo2: 98, temperature: '98.6°F' },
+    attendingDoctor: attendingDoctor || 'Dr. Ramesh Bhosale',
+    status: status || 'Waiting',
+    bedNumber,
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'Patient registered successfully at triage desk',
+    patient: newPatient,
+  });
+});
+
+// PUT /api/patients/:id — Update patient status / consultation progress
+telemetryRouter.put('/patients/:id', (req: Request, res: Response): void => {
+  const id = String(req.params.id);
+  const updated = db.updatePatient(id, req.body);
+  if (!updated) {
+    res.status(404).json({ success: false, error: 'Patient not found' });
+    return;
+  }
+  res.json({
+    success: true,
+    message: 'Patient record updated',
+    patient: updated,
+  });
+});
+
 // GET /api/footfalls
 telemetryRouter.get('/footfalls', (_req: Request, res: Response): void => {
   res.json({
@@ -185,3 +311,4 @@ telemetryRouter.get('/diagnostics', (_req: Request, res: Response): void => {
     diagnostics: db.diagnostics,
   });
 });
+

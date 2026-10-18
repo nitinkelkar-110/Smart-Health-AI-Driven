@@ -224,8 +224,50 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 16. Doctor Master Profiles & Staff Registrations
+CREATE TABLE IF NOT EXISTS doctors (
+    id VARCHAR(50) PRIMARY KEY,
+    doctor_name VARCHAR(150) NOT NULL,
+    facility_id VARCHAR(50) REFERENCES facilities(id) ON DELETE CASCADE,
+    specialty VARCHAR(100) NOT NULL,
+    qualification VARCHAR(100),
+    registration_number VARCHAR(100) UNIQUE,
+    experience_years INT DEFAULT 5,
+    contact_number VARCHAR(20),
+    shift_preference VARCHAR(50) DEFAULT 'General (9 AM - 5 PM)',
+    status VARCHAR(30) DEFAULT 'PRESENT',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 17. Patients Master & Real-Time OPD Triage Register
+CREATE TABLE IF NOT EXISTS patients (
+    id VARCHAR(50) PRIMARY KEY,
+    token_number INT NOT NULL,
+    uhid VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(150) NOT NULL,
+    age INT NOT NULL,
+    gender VARCHAR(10) CHECK (gender IN ('M', 'F', 'Other')),
+    facility_id VARCHAR(50) REFERENCES facilities(id) ON DELETE CASCADE,
+    department VARCHAR(100) NOT NULL,
+    chief_complaint TEXT NOT NULL,
+    triage_priority VARCHAR(30) CHECK (triage_priority IN ('P1 - Resuscitation', 'P2 - Emergent', 'P3 - Urgent', 'P4 - Non-Urgent')),
+    bp VARCHAR(20),
+    pulse INT,
+    spo2 INT,
+    temperature VARCHAR(20),
+    attending_doctor VARCHAR(150),
+    registration_time VARCHAR(20),
+    status VARCHAR(30) CHECK (status IN ('Waiting', 'In Consultation', 'Observation', 'Admitted', 'Discharged')),
+    bed_number VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for lightning fast lookups
 CREATE INDEX IF NOT EXISTS idx_inventory_facility ON inventory(facility_id);
 CREATE INDEX IF NOT EXISTS idx_transfers_status ON redistribution_transfers(status);
 CREATE INDEX IF NOT EXISTS idx_alerts_facility ON alerts(facility_id);
 CREATE INDEX IF NOT EXISTS idx_footfalls_date ON patient_footfalls(record_date);
+CREATE INDEX IF NOT EXISTS idx_patients_facility ON patients(facility_id);
+CREATE INDEX IF NOT EXISTS idx_patients_status ON patients(status);
+CREATE INDEX IF NOT EXISTS idx_doctors_facility ON doctors(facility_id);
+

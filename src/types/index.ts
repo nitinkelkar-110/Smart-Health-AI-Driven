@@ -120,6 +120,9 @@ export interface DoctorRosterEntry {
   shift: 'Morning (8 AM - 2 PM)' | 'Evening (2 PM - 8 PM)' | 'Night (8 PM - 8 AM)' | 'General (9 AM - 5 PM)';
   status: DoctorStatus;
   contactNumber: string;
+  registrationNumber?: string;
+  qualifications?: string;
+  experienceYears?: number;
 }
 
 export interface DoctorAttendanceRecord {
@@ -138,6 +141,34 @@ export interface DoctorAttendanceRecord {
   alertNote?: string;
   lastUpdated: string;
 }
+
+export type TriagePriority = 'P1 - Resuscitation' | 'P2 - Emergent' | 'P3 - Urgent' | 'P4 - Non-Urgent';
+export type PatientVisitStatus = 'Waiting' | 'In Consultation' | 'Observation' | 'Admitted' | 'Discharged';
+
+export interface PatientRecord {
+  id: string;
+  tokenNumber: number;
+  uhid: string; // ABHA / National Health ID format
+  name: string; // Authentic Indian Demographic Name
+  age: number;
+  gender: 'M' | 'F' | 'Other';
+  facilityId: string;
+  facilityName: string;
+  department: string;
+  chiefComplaint: string;
+  triagePriority: TriagePriority;
+  vitals: {
+    bp: string;
+    pulse: number;
+    spo2: number;
+    temperature: string;
+  };
+  attendingDoctor: string; // Authentic Indian Doctor Name
+  registrationTime: string;
+  status: PatientVisitStatus;
+  bedNumber?: string;
+}
+
 
 export type DiagnosticTestStatus = 
   | 'AVAILABLE' 

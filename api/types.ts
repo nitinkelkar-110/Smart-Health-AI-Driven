@@ -75,6 +75,59 @@ export interface ApiAlertNotification {
   isAcknowledged: boolean;
 }
 
+export interface ApiDoctorRosterEntry {
+  id: string;
+  doctorName: string;
+  specialty: string;
+  shift: string;
+  status: 'PRESENT' | 'ABSENT' | 'ON_LEAVE' | 'UNREPORTED';
+  contactNumber: string;
+  registrationNumber?: string;
+  qualifications?: string;
+  experienceYears?: number;
+}
+
+export interface ApiDoctorRecord {
+  id: string;
+  facilityId: string;
+  facilityName: string;
+  scheduledDoctors: number;
+  presentDoctors: number;
+  absentDoctors: number;
+  onLeaveDoctors: number;
+  minimumRequired: number;
+  attendanceRate: number;
+  isStaffingDeficit: boolean;
+  alertNote?: string;
+  roster: ApiDoctorRosterEntry[];
+  lastUpdated: string;
+}
+
+export interface ApiPatientRecord {
+  id: string;
+  tokenNumber: number;
+  uhid: string;
+  name: string;
+  age: number;
+  gender: 'M' | 'F' | 'Other';
+  facilityId: string;
+  facilityName: string;
+  department: string;
+  chiefComplaint: string;
+  triagePriority: 'P1 - Resuscitation' | 'P2 - Emergent' | 'P3 - Urgent' | 'P4 - Non-Urgent';
+  vitals: {
+    bp: string;
+    pulse: number;
+    spo2: number;
+    temperature: string;
+  };
+  attendingDoctor: string;
+  registrationTime: string;
+  status: 'Waiting' | 'In Consultation' | 'Observation' | 'Admitted' | 'Discharged';
+  bedNumber?: string;
+}
+
+
 // AI Gateway Contracts
 export interface ApiChatRequest {
   prompt: string;

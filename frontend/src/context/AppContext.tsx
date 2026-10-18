@@ -14,6 +14,8 @@ import {
   AuditLog,
   LanguageCode,
   UserRole,
+  PatientRecord,
+  PatientVisitStatus,
 } from '../types';
 import {
   AIModel,
@@ -32,7 +34,9 @@ import {
   INITIAL_DIAGNOSTICS,
   INITIAL_ALERTS,
   INITIAL_AUDIT_LOGS,
+  INITIAL_PATIENTS,
 } from '../data/initialData';
+
 import {
   INITIAL_PROVIDERS,
   VERIFIED_FREE_MODELS,
@@ -53,7 +57,9 @@ interface AppContextType {
   footfalls: PatientFootfallRecord[];
   beds: BedAvailabilityRecord[];
   doctors: DoctorAttendanceRecord[];
+  patients: PatientRecord[];
   diagnostics: DiagnosticTestRecord[];
+
   transfers: RedistributionTransfer[];
   atRiskFacilities: AtRiskFacility[];
   alerts: AlertNotification[];
@@ -137,7 +143,12 @@ interface AppContextType {
     absent: number,
     onLeave: number
   ) => void;
+  registerPatient: (
+    patient: Omit<PatientRecord, 'id' | 'tokenNumber' | 'registrationTime'>
+  ) => void;
+  updatePatientStatus: (patientId: string, status: PatientVisitStatus) => void;
   updateDiagnosticStatus: (
+
     testId: string,
     status: DiagnosticTestRecord['status'],
     reagentStatus?: DiagnosticTestRecord['reagentStatus']
@@ -184,10 +195,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [beds, setBeds] = useState<BedAvailabilityRecord[]>(() =>
     loadStored('beds', INITIAL_BEDS)
   );
-  const [doctors, setDoctors] = useState<DoctorAttendanceRecord[]>(() =>
-    loadStored('doctors', INITIAL_DOCTORS)
-  );
+  const [doctors, setDoctors] = useState<DoctorAttendanceRecord[]>(() => {
+    const stored = loadStored<DoctorAttendanceRecord[]>('doctors', INITIAL_DOCTORS);
+    if (!stored || stored.length < INITIAL_DOCTORS.length || !stored.some((d) => d.roster && d.roster.length > 0)) {
+      return INITIAL_DOCTORS;
+    }
+    return stored;
+  });
+  const [patients, setPatients] = useState<PatientRecord[]>(() => {
+    const stored = loadStored<PatientRecord[]>('patients', INITIAL_PATIENTS);
+    if (!stored || stored.length === 0) {
+      return INITIAL_PATIENTS;
+    }
+    return stored;
+  });
   const [diagnostics, setDiagnostics] = useState<DiagnosticTestRecord[]>(() =>
+
     loadStored('diagnostics', INITIAL_DIAGNOSTICS)
   );
   const [transfers, setTransfers] = useState<RedistributionTransfer[]>(() => {
@@ -329,6 +352,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem(STORAGE_PREFIX + 'footfalls', JSON.stringify(footfalls));
     localStorage.setItem(STORAGE_PREFIX + 'beds', JSON.stringify(beds));
     localStorage.setItem(STORAGE_PREFIX + 'doctors', JSON.stringify(doctors));
+    localStorage.setItem(STORAGE_PREFIX + 'patients', JSON.stringify(patients));
     localStorage.setItem(STORAGE_PREFIX + 'diagnostics', JSON.stringify(diagnostics));
     localStorage.setItem(STORAGE_PREFIX + 'transfers', JSON.stringify(transfers));
     localStorage.setItem(STORAGE_PREFIX + 'alerts', JSON.stringify(alerts));
@@ -348,6 +372,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     footfalls,
     beds,
     doctors,
+    patients,
     diagnostics,
     transfers,
     alerts,
@@ -383,12 +408,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (Array.isArray(json.data.alerts) && json.data.alerts.length > 0) {
               setAlerts(json.data.alerts);
             }
+            if (Array.isArray(json.data.doctors) && json.data.doctors.length > 0) {
+              setDoctors(json.data.doctors);
+            }
+            if (Array.isArray(json.data.patients) && json.data.patients.length > 0) {
+              setPatients(json.data.patients);
+            }
           }
         }
       } catch {
         // Fallback to local storage state
       }
     };
+
 
     syncBackendDatabase();
     return () => {
@@ -942,9 +974,68 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
 
     addAuditLog('DOCTOR_ATTENDANCE_LOGGED', `Recorded doctor shift attendance at ${facilityId}: ${present} present`, facilityId);
+
+    // Sync to backend API gateway in background
+    fetch('/api/doctors/attendance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        facilityId,
+        presentDoctors: present,
+        absentDoctors: absent,
+        onLeaveDoctors: onLeave,
+      }),
+    }).catch(() => {});
+  };
+
+  // 10b. Register Patient
+  const registerPatient = (
+    patientData: Omit<PatientRecord, 'id' | 'tokenNumber' | 'registrationTime'>
+  ) => {
+    const tokenNumber =
+      (patients.length > 0 ? Math.max(...patients.map((p) => p.tokenNumber)) : 100) + 1;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const newPatient: PatientRecord = {
+      ...patientData,
+      id: `PAT-${Date.now().toString().slice(-4)}`,
+      tokenNumber,
+      registrationTime: timeStr,
+    };
+
+    setPatients((prev) => [newPatient, ...prev]);
+
+    addAuditLog(
+      'PATIENT_REGISTERED',
+      `Registered patient ${newPatient.name} (${newPatient.uhid}) at ${newPatient.facilityName} - Priority: ${newPatient.triagePriority}`,
+      newPatient.facilityId
+    );
+
+    // Background sync to backend database
+    fetch('/api/patients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patientData),
+    }).catch(() => {});
+  };
+
+  // 10c. Update Patient Status
+  const updatePatientStatus = (patientId: string, status: PatientVisitStatus) => {
+    setPatients((prev) =>
+      prev.map((p) => (p.id === patientId ? { ...p, status } : p))
+    );
+
+    addAuditLog('PATIENT_STATUS_UPDATED', `Updated patient ${patientId} status to ${status}`);
+
+    fetch(`/api/patients/${patientId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    }).catch(() => {});
   };
 
   // 11. Update Diagnostic Status
+
   const updateDiagnosticStatus = (
     testId: string,
     status: DiagnosticTestRecord['status'],
@@ -1007,7 +1098,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setFootfalls(INITIAL_FOOTFALLS);
     setBeds(INITIAL_BEDS);
     setDoctors(INITIAL_DOCTORS);
+    setPatients(INITIAL_PATIENTS);
     setDiagnostics(INITIAL_DIAGNOSTICS);
+
     const recs = generateSmartRedistributionRecommendations(INITIAL_FACILITIES, INITIAL_INVENTORY, []);
     setTransfers(recs);
     setAlerts(INITIAL_ALERTS);
@@ -1277,6 +1370,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         footfalls,
         beds,
         doctors,
+        patients,
         diagnostics,
         transfers,
         atRiskFacilities,
@@ -1337,7 +1431,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         recordFootfall,
         updateBedRecord,
         submitDoctorAttendanceRecord,
+        registerPatient,
+        updatePatientStatus,
         updateDiagnosticStatus,
+
 
         assignInterventionOfficer,
         resolveInterventionAction,

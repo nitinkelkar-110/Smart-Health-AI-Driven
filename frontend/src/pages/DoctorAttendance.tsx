@@ -25,6 +25,9 @@ export const DoctorAttendance: React.FC = () => {
   const [formAbsent, setFormAbsent] = useState(0);
   const [formOnLeave, setFormOnLeave] = useState(1);
 
+  const [doctorSearch, setDoctorSearch] = useState('');
+  const [shiftFilter, setShiftFilter] = useState('ALL');
+
   const filteredDoctors = doctors.filter(
     (d) => selectedFacilityId === 'ALL' || d.facilityId === selectedFacilityId
   );
@@ -60,10 +63,33 @@ export const DoctorAttendance: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Doctor Attendance Monitoring</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Shift-wise clinical duty attendance, minimum requirement audits, and automated staffing deficit flags.
+            Shift-wise clinical duty attendance across 12 health centres, authentic Indian medical officer rosters, and automated deficit alerts.
           </p>
         </div>
+
+        {/* Search & Shift Filter */}
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={doctorSearch}
+            onChange={(e) => setDoctorSearch(e.target.value)}
+            placeholder="Search doctor / specialty / qualification..."
+            className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl shadow-2xs focus:ring-2 focus:ring-teal-500 w-64"
+          />
+          <select
+            value={shiftFilter}
+            onChange={(e) => setShiftFilter(e.target.value)}
+            className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl shadow-2xs font-semibold text-slate-700"
+          >
+            <option value="ALL">All Shifts</option>
+            <option value="Morning">Morning (8 AM - 2 PM)</option>
+            <option value="General">General (9 AM - 5 PM)</option>
+            <option value="Evening">Evening (2 PM - 8 PM)</option>
+            <option value="Night">Night (8 PM - 8 AM)</option>
+          </select>
+        </div>
       </div>
+
 
       {/* Staffing Deficit Alert Banner */}
       {deficitCentres.length > 0 && (
@@ -171,34 +197,74 @@ export const DoctorAttendance: React.FC = () => {
 
                 {/* Doctor Shift Entries */}
                 <div className="mt-4 space-y-2 pt-3 border-t border-slate-100">
-                  <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
-                    Duty Roster
-                  </span>
-                  {docRecord.roster.map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs flex items-center justify-between"
-                    >
-                      <div>
-                        <span className="font-bold text-slate-900 block">{doc.doctorName}</span>
-                        <span className="text-[11px] text-slate-500">{doc.specialty}</span>
-                        <span className="text-[10px] text-slate-400 block">{doc.shift}</span>
-                      </div>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          doc.status === 'PRESENT'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : doc.status === 'ON_LEAVE'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                      Duty Roster ({(docRecord.roster || []).length} Doctors)
+                    </span>
+                  </div>
+                  {(docRecord.roster || [])
+                    .filter((doc) => {
+                      const matchesSearch =
+                        !doctorSearch ||
+                        doc.doctorName.toLowerCase().includes(doctorSearch.toLowerCase()) ||
+                        doc.specialty.toLowerCase().includes(doctorSearch.toLowerCase()) ||
+                        (doc.qualifications && doc.qualifications.toLowerCase().includes(doctorSearch.toLowerCase()));
+                      const matchesShift =
+                        shiftFilter === 'ALL' || doc.shift.toLowerCase().includes(shiftFilter.toLowerCase());
+                      return matchesSearch && matchesShift;
+                    })
+                    .map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs flex flex-col gap-1.5"
                       >
-                        {doc.status}
-                      </span>
-                    </div>
-                  ))}
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-slate-900 block">{doc.doctorName}</span>
+                              {doc.experienceYears && (
+                                <span className="text-[10px] bg-slate-200/80 text-slate-600 px-1.5 py-0.2 rounded font-medium">
+                                  {doc.experienceYears}y exp
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-teal-700 font-semibold">{doc.specialty}</span>
+                            {doc.qualifications && (
+                              <span className="text-[10px] text-slate-500 block">
+                                {doc.qualifications} {doc.registrationNumber && `• Reg: ${doc.registrationNumber}`}
+                              </span>
+                            )}
+                          </div>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                              doc.status === 'PRESENT'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : doc.status === 'ON_LEAVE'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {doc.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[10px] text-slate-400">
+                          <span>{doc.shift}</span>
+                          <a
+                            href={`tel:${doc.contactNumber}`}
+                            className="text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1"
+                          >
+                            <Phone className="w-2.5 h-2.5" />
+                            {doc.contactNumber}
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  {docRecord.roster && docRecord.roster.length === 0 && (
+                    <p className="text-[11px] text-slate-400 italic">No scheduled doctors logged.</p>
+                  )}
                 </div>
               </div>
+
 
               {/* Footer */}
               <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
