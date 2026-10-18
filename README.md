@@ -1,17 +1,4 @@
 # MediGrid AI — Multilingual Healthcare Intelligence & Autonomous Operational Telemetry Platform
-
-> **Healthcare Intelligence Without Language Barriers**  
-> *A full-stack, modular, scalable, multi-model AI platform coordinating essential healthcare resources for Primary Health Centres (PHCs), Community Health Centres (CHCs), healthcare workers, and district administrators.*
-
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-19-cyan.svg)](https://react.dev/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38bdf8.svg)](https://tailwindcss.com/)
-[![License](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
-[![Zero-Paid-API](https://img.shields.io/badge/Free%20Tier-Guaranteed-green.svg)](#free-tier-guarantee)
-[![Automated Tests](https://img.shields.io/badge/Tests-18%2F18%20Passing-brightgreen.svg)](#automated-testing)
-
----
-
 ## 🌟 Executive Overview & Core Vision
 
 Primary Health Centres (PHCs) and Community Health Centres (CHCs) form the foundational backbone of rural healthcare. Yet district health administrators face persistent operational crises:
@@ -168,25 +155,6 @@ npm run dev
 ```
 Open your browser at: `http://localhost:5173/`
 
-### 3. Build for Production
-```bash
-npm run build
-npm run preview
-```
-
----
-
-## 🚀 Easy GitHub Push Guide
-
-### Option 1: One-Click Script (Recommended)
-Double-click [`push_to_github.bat`](file:///c:/Users/hp/Desktop/VELONX/push_to_github.bat) or run in terminal:
-```bash
-# In Windows Terminal or Command Prompt:
-.\push_to_github.bat
-
-# Or using npm:
-npm run push
-```
 The script will prompt for your GitHub repository URL (if not already set), stage and commit your changes, and push branch `main` to GitHub automatically!
 
 ### Option 2: Standard Git Commands
@@ -214,17 +182,6 @@ VELONX/
 └── package.json                  # Root Monorepo Orchestrator
 ```
 
-### 4. Optional: Configure Third-Party API Keys (Server-Side Only)
-All third-party API keys are strictly kept on the server and are **never exposed to client browsers**:
-- Add your keys to [`backend/.env`](file:///c:/Users/hp/Desktop/VELONX/backend/.env):
-  ```env
-  GEMINI_API_KEY=AIzaSy...
-  GROQ_API_KEY=gsk_...
-  OPENROUTER_API_KEY=sk-or-v1-...
-  ```
-- `.gitignore` automatically prevents `.env` and credentials from being committed to GitHub.
-
-
 ## 🛡️ Security, Privacy & Compliance
 
 - **No Patient PII Transmission**: Real-time patient identifiers are never forwarded to external LLM providers. Demonstrations use synthetic telemetry.
@@ -236,5 +193,6 @@ All third-party API keys are strictly kept on the server and are **never exposed
 
 ## 👥 Contributors & Acknowledgments
 Built with ❤️ for rural healthcare workers, Medical Officers, and District Health Teams striving to eliminate stock-outs and healthcare inequalities.
-#   S m a r t - H e a l t h - A I - D r i v e n  
+#   S m a r t - H e a l t h - A I - D r i v e n 
+ 
  
