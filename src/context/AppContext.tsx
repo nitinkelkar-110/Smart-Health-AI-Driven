@@ -362,6 +362,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     conversations,
   ]);
 
+  // Live Backend Database Synchronization & Hydration
+  useEffect(() => {
+    let isMounted = true;
+    const syncBackendDatabase = async () => {
+      try {
+        const res = await fetch('/api/telemetry');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data && isMounted) {
+            if (Array.isArray(json.data.facilities) && json.data.facilities.length > 0) {
+              setFacilities(json.data.facilities);
+            }
+            if (Array.isArray(json.data.inventory) && json.data.inventory.length > 0) {
+              setInventory(json.data.inventory);
+            }
+            if (Array.isArray(json.data.transfers) && json.data.transfers.length > 0) {
+              setTransfers(json.data.transfers);
+            }
+            if (Array.isArray(json.data.alerts) && json.data.alerts.length > 0) {
+              setAlerts(json.data.alerts);
+            }
+          }
+        }
+      } catch {
+        // Fallback to local storage state
+      }
+    };
+
+    syncBackendDatabase();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Compute dynamically evaluated at-risk facilities
   const atRiskFacilities = useMemo(() => {
     return evaluateAtRiskFacilities(facilities, inventory, footfalls, beds, doctors, diagnostics);
@@ -584,6 +618,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       `Approved redistribution of ${finalQty} ${tr.unit} ${tr.medicineName} from ${tr.sourceFacilityName} to ${tr.destFacilityName}`,
       tr.destFacilityId
     );
+
+    // Sync with backend database
+    fetch('/api/transfers/approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transferId, officerName: 'Dr. S. Kulkarni (DHO)' }),
+    }).catch(() => {});
   };
 
   // 5. Dispatch Transfer
@@ -609,6 +650,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       `Dispatched ambulance delivery of ${tr.quantity} ${tr.unit} ${tr.medicineName} to ${tr.destFacilityName}`,
       tr.sourceFacilityId
     );
+
+    // Sync with backend database
+    fetch(`/api/transfers/${transferId}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'DISPATCHED' }),
+    }).catch(() => {});
   };
 
   // 6. Confirm Receipt (The core hackathon workflow climax!)
@@ -726,6 +774,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch {
       // safe fallback
     }
+
+    // Sync with backend database
+    fetch(`/api/transfers/${transferId}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'RECEIVED' }),
+    }).catch(() => {});
   };
 
   // 7. Reject Transfer
@@ -932,6 +987,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setAlerts((prev) =>
       prev.map((a) => (a.id === alertId ? { ...a, isAcknowledged: true } : a))
     );
+    // Sync with backend database
+    fetch(`/api/alerts/${alertId}/acknowledge`, { method: 'POST' }).catch(() => {});
   };
 
   const resolveAlertItem = (alertId: string) => {
@@ -957,7 +1014,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setAuditLogs(INITIAL_AUDIT_LOGS);
     setSelectedFacilityId('ALL');
     setActiveScenarioMessage('Demo state restored to baseline synthetic dataset.');
+
+    // Reset backend database
+    fetch('/api/telemetry/reset', { method: 'POST' }).catch(() => {});
   };
+
 
   // 15. Run Demo Scenarios (1 to 7)
   const runDemoScenario = (scenarioNum: number) => {

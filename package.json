@@ -10,6 +10,7 @@
     "build:frontend": "tsc -b && vite build",
     "build:backend": "tsc -p backend/tsconfig.json",
     "build": "npm run build:backend && npm run build:frontend",
+    "start": "node backend/dist/server.js",
     "start:backend": "node backend/dist/server.js",
     "lint": "oxlint",
     "test": "node tests/run_tests.mjs && node tests/test_architecture_and_security.mjs && npx tsx tests/test_multilingual_switching.mjs",
