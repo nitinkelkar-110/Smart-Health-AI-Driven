@@ -180,9 +180,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const [facilities, setFacilities] = useState<HealthFacility[]>(() =>
-    loadStored('facilities', INITIAL_FACILITIES)
-  );
+  const [facilities, setFacilities] = useState<HealthFacility[]>(() => {
+    const raw = loadStored<HealthFacility[]>('facilities', INITIAL_FACILITIES);
+    if (!Array.isArray(raw) || raw.length === 0) return INITIAL_FACILITIES;
+    return raw.map((f, i) => {
+      const defaultFac =
+        INITIAL_FACILITIES.find((df) => df.id === f.id) || INITIAL_FACILITIES[i] || INITIAL_FACILITIES[0];
+      const lat =
+        typeof f.lat === 'number' && !isNaN(f.lat)
+          ? f.lat
+          : typeof (f as any).latitude === 'number' && !isNaN((f as any).latitude)
+          ? (f as any).latitude
+          : defaultFac.lat;
+      const lng =
+        typeof f.lng === 'number' && !isNaN(f.lng)
+          ? f.lng
+          : typeof (f as any).longitude === 'number' && !isNaN((f as any).longitude)
+          ? (f as any).longitude
+          : defaultFac.lng;
+      return {
+        ...defaultFac,
+        ...f,
+        lat,
+        lng,
+      };
+    });
+  });
   const [inventory, setInventory] = useState<MedicineItem[]>(() =>
     loadStored('inventory', INITIAL_INVENTORY)
   );

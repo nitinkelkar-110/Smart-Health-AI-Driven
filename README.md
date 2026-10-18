@@ -236,3 +236,5 @@ All third-party API keys are strictly kept on the server and are **never exposed
 
 ## 👥 Contributors & Acknowledgments
 Built with ❤️ for rural healthcare workers, Medical Officers, and District Health Teams striving to eliminate stock-outs and healthcare inequalities.
+#   S m a r t - H e a l t h - A I - D r i v e n  
+ 

@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { InsightsDrawer } from './components/InsightsDrawer';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Pages
 import { DistrictDashboard } from './pages/DistrictDashboard';
@@ -207,8 +208,10 @@ const MainLayout: React.FC = () => {
 
 export default function App() {
   return (
-    <AppProvider>
-      <MainLayout />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <MainLayout />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }

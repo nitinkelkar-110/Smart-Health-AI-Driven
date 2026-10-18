@@ -51,6 +51,27 @@ export const FacilityMap: React.FC<FacilityMapProps> = ({
   // Center roughly on Pune District Rural
   const defaultCenter: [number, number] = [18.5204, 73.8567];
 
+  const getValidCoords = (fac: any): [number, number] | null => {
+    if (!fac) return null;
+    const lat =
+      typeof fac.lat === 'number' && !isNaN(fac.lat)
+        ? fac.lat
+        : typeof fac.latitude === 'number' && !isNaN(fac.latitude)
+        ? fac.latitude
+        : null;
+    const lng =
+      typeof fac.lng === 'number' && !isNaN(fac.lng)
+        ? fac.lng
+        : typeof fac.longitude === 'number' && !isNaN(fac.longitude)
+        ? fac.longitude
+        : null;
+
+    if (lat !== null && lng !== null && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      return [lat, lng];
+    }
+    return null;
+  };
+
   const getStatusColor = (status: HealthFacility['status']) => {
     switch (status) {
       case 'CRITICAL_INTERVENTION':
@@ -65,7 +86,10 @@ export const FacilityMap: React.FC<FacilityMapProps> = ({
 
   // Find facility coords map
   const coordsMap = new Map<string, [number, number]>();
-  facilities.forEach((f) => coordsMap.set(f.id, [f.lat, f.lng]));
+  facilities.forEach((f) => {
+    const coords = getValidCoords(f);
+    if (coords) coordsMap.set(f.id, coords);
+  });
 
   // Active transfer routes to draw on the map
   const activeRoutes = transfers
@@ -134,6 +158,8 @@ export const FacilityMap: React.FC<FacilityMapProps> = ({
 
         {/* Health Centre Markers */}
         {facilities.map((fac) => {
+          const coords = getValidCoords(fac);
+          if (!coords) return null;
           const isSelected = selectedFacilityId === fac.id;
           const color = isSelected ? '#4338ca' : getStatusColor(fac.status);
           const label = fac.type === 'PHC' ? 'P' : 'C';
@@ -141,7 +167,7 @@ export const FacilityMap: React.FC<FacilityMapProps> = ({
           return (
             <Marker
               key={fac.id}
-              position={[fac.lat, fac.lng]}
+              position={coords}
               icon={createMarkerIcon(color, label)}
               eventHandlers={{
                 click: () => onSelectFacility && onSelectFacility(fac.id),
