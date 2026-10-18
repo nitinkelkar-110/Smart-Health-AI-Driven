@@ -312,3 +312,48 @@ telemetryRouter.get('/diagnostics', (_req: Request, res: Response): void => {
   });
 });
 
+// GET /api/doctors — Get duty rosters and attendance for all facilities
+telemetryRouter.get('/doctors', (req: Request, res: Response): void => {
+  const { facilityId } = req.query;
+  let records = db.doctors;
+  if (facilityId && typeof facilityId === 'string') {
+    records = records.filter((d) => d.facilityId === facilityId);
+  }
+  res.json({
+    success: true,
+    count: records.length,
+    doctors: records,
+  });
+});
+
+// POST /api/doctors/attendance — Update attendance report for a facility
+telemetryRouter.post('/doctors/attendance', (req: Request, res: Response): void => {
+  const { facilityId, present, absent, onLeave, note } = req.body;
+  if (!facilityId || present === undefined) {
+    res.status(400).json({
+      success: false,
+      error: 'facilityId and present count are required',
+    });
+    return;
+  }
+
+  const updated = db.updateDoctorAttendance(
+    String(facilityId),
+    Number(present) || 0,
+    Number(absent) || 0,
+    Number(onLeave) || 0,
+    note ? String(note) : undefined
+  );
+
+  if (!updated) {
+    res.status(404).json({ success: false, error: 'Facility doctor record not found' });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: 'Doctor attendance updated successfully',
+    record: updated,
+  });
+});
+
