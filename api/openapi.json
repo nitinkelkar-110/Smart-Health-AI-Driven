@@ -1,0 +1,128 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "MediGrid AI Healthcare Intelligence API",
+    "version": "1.0.0",
+    "description": "Secure API Gateway for Multilingual Healthcare Operations, Multi-Model LLM Routing, and PHC/CHC Resource Management. Third-party provider API keys are strictly concealed behind the server gateway."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001/api",
+      "description": "Local Backend API Gateway"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "System Health Check",
+        "responses": {
+          "200": {
+            "description": "Backend server is healthy and operational."
+          }
+        }
+      }
+    },
+    "/ai/chat": {
+      "post": {
+        "summary": "Secure AI Chat & Multi-Model Routing",
+        "description": "Routes user prompt through Google Gemini, Groq, OpenRouter, Ollama, or deterministic clinical engine without exposing external API keys to the browser.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prompt": { "type": "string" },
+                  "language": { "type": "string", "example": "mr" },
+                  "modelId": { "type": "string", "example": "auto" },
+                  "taskType": { "type": "string", "example": "healthcare" },
+                  "operationalContext": { "type": "object" }
+                },
+                "required": ["prompt"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AI completion response with telemetry and source citations."
+          }
+        }
+      }
+    },
+    "/ai/providers": {
+      "get": {
+        "summary": "List Configured AI Providers",
+        "description": "Returns provider connectivity status and masked key previews. Raw secrets are NEVER returned.",
+        "responses": {
+          "200": {
+            "description": "List of provider states."
+          }
+        }
+      }
+    },
+    "/ai/models": {
+      "get": {
+        "summary": "List Available Models",
+        "description": "Discovers active models across configured server providers.",
+        "responses": {
+          "200": {
+            "description": "Array of AI models."
+          }
+        }
+      }
+    },
+    "/facilities": {
+      "get": {
+        "summary": "List Health Facilities",
+        "description": "Returns operational facilities in the district.",
+        "responses": {
+          "200": {
+            "description": "Facilities list."
+          }
+        }
+      }
+    },
+    "/inventory": {
+      "get": {
+        "summary": "List Medicine Inventory",
+        "description": "Returns real-time inventory ledger with run-rate stockouts and expiry dates.",
+        "responses": {
+          "200": {
+            "description": "Inventory list."
+          }
+        }
+      }
+    },
+    "/transfers": {
+      "get": {
+        "summary": "List Resource Redistribution Transfers",
+        "description": "Returns algorithmic stock redistribution recommendations and transfer statuses.",
+        "responses": {
+          "200": {
+            "description": "Transfers list."
+          }
+        }
+      },
+      "post": {
+        "summary": "Create or Approve Transfer",
+        "responses": {
+          "200": {
+            "description": "Transfer updated."
+          }
+        }
+      }
+    },
+    "/alerts": {
+      "get": {
+        "summary": "List Active Operational Alerts",
+        "responses": {
+          "200": {
+            "description": "Alert notifications list."
+          }
+        }
+      }
+    }
+  }
+}
