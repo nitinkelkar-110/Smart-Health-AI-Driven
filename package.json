@@ -13,6 +13,7 @@
     "start:backend": "node backend/dist/server.js",
     "lint": "oxlint",
     "test": "node tests/run_tests.mjs && node tests/test_architecture_and_security.mjs && npx tsx tests/test_multilingual_switching.mjs",
+    "push": "push_to_github.bat",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -174,16 +174,56 @@ npm run build
 npm run preview
 ```
 
-### 4. Optional: Configure Third-Party API Keys
-Navigate to **AI Model Hub** or **Settings** to add optional provider credentials:
-- OpenRouter API key (`sk-or-v1-...`)
-- Groq Cloud API key (`gsk_...`)
-- Google AI Studio API key (`AIzaSy...`)
-- Ollama endpoint (`http://localhost:11434`)
+---
 
-> **Note**: Keys are stored securely in local browser storage and are never transmitted to unauthorized third parties or committed to source control. MediGrid AI works immediately in full demonstration mode without adding any keys.
+## 🚀 Easy GitHub Push Guide
+
+### Option 1: One-Click Script (Recommended)
+Double-click [`push_to_github.bat`](file:///c:/Users/hp/Desktop/VELONX/push_to_github.bat) or run in terminal:
+```bash
+# In Windows Terminal or Command Prompt:
+.\push_to_github.bat
+
+# Or using npm:
+npm run push
+```
+The script will prompt for your GitHub repository URL (if not already set), stage and commit your changes, and push branch `main` to GitHub automatically!
+
+### Option 2: Standard Git Commands
+```bash
+# 1. Create a repository on GitHub (https://github.com/new)
+# 2. Link your remote (replace with your GitHub repo URL):
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+
+# 3. Ensure branch is main and push:
+git branch -M main
+git push -u origin main
+```
 
 ---
+
+## 📁 4-Tier Project Architecture
+
+```text
+VELONX/
+├── frontend/                     # Standalone React 19 + Vite UI
+├── backend/                      # Secure Express Server & AI Gateway (Port 3001)
+├── database/                     # PostgreSQL / SQLite Schema, Seeds & Queries
+├── api/                          # Shared API Contracts & OpenAPI 3.0 Specs
+├── push_to_github.bat            # One-click Windows GitHub deployment script
+└── package.json                  # Root Monorepo Orchestrator
+```
+
+### 4. Optional: Configure Third-Party API Keys (Server-Side Only)
+All third-party API keys are strictly kept on the server and are **never exposed to client browsers**:
+- Add your keys to [`backend/.env`](file:///c:/Users/hp/Desktop/VELONX/backend/.env):
+  ```env
+  GEMINI_API_KEY=AIzaSy...
+  GROQ_API_KEY=gsk_...
+  OPENROUTER_API_KEY=sk-or-v1-...
+  ```
+- `.gitignore` automatically prevents `.env` and credentials from being committed to GitHub.
+
 
 ## 🛡️ Security, Privacy & Compliance
 
